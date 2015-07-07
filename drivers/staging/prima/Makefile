@@ -1,4 +1,8 @@
-default: all
+CFLAGS_KERNEL := -Wno-logical-not-parentheses -Wno-discarded-array-qualifiers
+MODNAME := wlan
+WLAN_ROOT := drivers/staging/prima
+
+# Feature flags which are not (currently) configurable via Kconfig
 
 KBUILD_OPTIONS := WLAN_ROOT=$(PWD)
 KBUILD_OPTIONS += MODNAME=wlan
