@@ -402,8 +402,8 @@ Fudge Factors:			Fudge factors are used to boost demand for
 				applied in scenarios where panel interface can
 				be more tolerant to memory latency such as
 				command mode panels.
-- qcom,max-bandwidth-per-pipe-kbps: This value indicates the max bandwidth in KB
-				that a single pipe can support without underflow.
+- qcom,max-bandwidth-per-pipe-kbps: A two dimensional array indicating the max
+				bandwidth in KB that a single pipe can support
 				without underflow for various usecases. The
 				first parameter indicates the usecase and the
 				second parameter gives the max bw allowed for
