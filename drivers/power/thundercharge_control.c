@@ -1,5 +1,5 @@
 /*
- * Copyright © 2015, Varun Chitre "varun.chitre15" <varun.chitre15@gmail.com>
+ * Copyright ï¿½ 2015, Varun Chitre "varun.chitre15" <varun.chitre15@gmail.com>
  *
  * Charger Control driver for yl_bq24157_charger and yl_fan5405_charger
  *
@@ -20,9 +20,9 @@
 #include "thundercharge_control.h"
 
 #define ENABLED             1
-#define AC_CURRENT          1400
+#define AC_CURRENT          1800
 #define USB_CURRENT         500
-#define MAX_VBUS_CURRENT    1500
+#define MAX_VBUS_CURRENT    2000
 #define THUNDERCHARGE       "thundercharge"
 
 int mswitch = ENABLED;
