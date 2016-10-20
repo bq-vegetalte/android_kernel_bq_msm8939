@@ -49,7 +49,7 @@ static const char *default_compressor = "lz4";
 #define ALLOC_ERROR_LOG_RATE_MS 1000
 
 /* Module params (documentation at end) */
-static unsigned int num_devices = 4;
+static unsigned int num_devices = 1;
 
 static int zram_show_mem_notifier(struct notifier_block *nb,
 				unsigned long action,
