@@ -516,7 +516,7 @@ config BLK_DEV_HD
 
 config BLK_DEV_RBD
 	tristate "Rados block device (RBD)"
-	depends on INET && EXPERIMENTAL && BLOCK
+	depends on INET && BLOCK
 	select CEPH_LIB
 	select LIBCRC32C
 	select CRYPTO_AES
@@ -531,6 +531,14 @@ config BLK_DEV_RBD
 
 	  If unsure, say N.
 
-source "drivers/block/zram/Kconfig"
+config BLK_DEV_RSXX
+	tristate "IBM FlashSystem 70/80 PCIe SSD Device Driver"
+	depends on PCI
+	help
+	  Device driver for IBM's high speed PCIe SSD
+	  storage devices: FlashSystem-70 and FlashSystem-80.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called rsxx.
 
 endif # BLK_DEV
