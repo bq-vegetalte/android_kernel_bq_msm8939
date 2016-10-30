@@ -154,8 +154,7 @@ enum {
 	SWP_FILE	= (1 << 7),	/* set after swap_activate success */
 	SWP_FAST	= (1 << 8),	/* blkdev access is fast and cheap */
 					/* add others here before... */
-	SWP_FAST	= (1 << 10),	/* blkdev access is fast and cheap */
-	SWP_SCANNING	= (1 << 11),	/* refcount in scan_swap_map */
+	SWP_SCANNING	= (1 << 9),	/* refcount in scan_swap_map */
 };
 
 #define SWAP_CLUSTER_MAX 32UL
@@ -418,7 +417,7 @@ mem_cgroup_uncharge_swapcache(struct page *page, swp_entry_t ent, bool swapout)
 
 #define get_nr_swap_pages()			0L
 #define total_swap_pages			0L
-#define total_swapcache_pages			0UL
+#define total_swapcache_pages()			0UL
 #define vm_swap_full(si)			0
 
 #define si_swapinfo(val) \
