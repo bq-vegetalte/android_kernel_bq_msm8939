@@ -249,6 +249,7 @@ static struct sensors_classdev sensors_light_cdev = {
 	.fifo_max_event_count = 0,
 	.enabled = 0,
 	.delay_msec = 200,
+	.flags = 2,
 	.sensors_enable = NULL,
 	.sensors_poll_delay = NULL,
 };
@@ -267,6 +268,7 @@ static struct sensors_classdev sensors_proximity_cdev = {
 	.fifo_max_event_count = 0,
 	.enabled = 0,
 	.delay_msec = 200,
+	.flags =3,
 	.sensors_enable = NULL,
 	.sensors_poll_delay = NULL,
 };
@@ -3158,97 +3160,26 @@ static enum hrtimer_restart stk_als_timer_func(struct hrtimer *timer)
 
 static void stk_als_poll_work_func(struct work_struct *work)
 {
-	struct stk3x1x_data *ps_data = container_of(work, struct stk3x1x_data, stk_als_work);	
-	int32_t reading, als_comperator, flag_reg;
-	uint32_t reading_lux;
-	#ifdef STK_IRS	
-	int ret;
-	#endif
-#ifdef STK_GES			
-	if(ps_data->ges_enabled)
-	{
-		input_report_abs(ps_data->als_input_dev, ABS_MISC, ps_data->als_lux_last);
-		input_sync(ps_data->als_input_dev);
-#ifdef STK_DEBUG_PRINTF				
-		printk(KERN_INFO "%s: ges_enabled=1, als input event %d lux\n",__func__, ps_data->als_lux_last);		
-#endif
-	}
-#endif
-	
-	flag_reg = stk3x1x_get_flag(ps_data);
-	if(flag_reg < 0)
-		return;		
-	
-	#ifdef STK_IRS
-	if(ps_data->als_data_index < 60000)
-		ps_data->als_data_index++;
-	else
-		ps_data->als_data_index = 0;
-		
-	if(	ps_data->als_data_index % 10 == 0)
-	{
-		if(ps_data->ps_distance_last != 0)
-		{		
-			ret = stk3x1x_get_ir_reading(ps_data);
-			if(ret > 0)
-				ps_data->ir_code = ret;
-		}		
-		return;
-	}
-	#endif
-	
-	if(!(flag_reg&STK_FLG_ALSDR_MASK))
-	{
-		//printk(KERN_INFO "%s: als is not ready\n", __func__);
-		return;
-	}
-	
+}
+
+static void stk_als_work_func(struct work_struct *work)
+{
+	struct stk3x1x_data *ps_data = container_of(work, struct stk3x1x_data, stk_als_work);
+	int32_t reading;
+	ktime_t ts;
+
+	mutex_lock(&ps_data->io_lock);
 	reading = stk3x1x_get_als_reading(ps_data);
 	if(reading < 0)		
 	{
 		return;
-	}
-	
-	if(ps_data->ir_code)
-	{
-		ps_data->als_correct_factor = 1000;
-		if(reading < STK_IRC_MAX_ALS_CODE && reading > STK_IRC_MIN_ALS_CODE && 
-			ps_data->ir_code > STK_IRC_MIN_IR_CODE)
-		{
-			als_comperator = reading * STK_IRC_ALS_NUMERA / STK_IRC_ALS_DENOMI;
-			if(ps_data->ir_code > als_comperator)
-				ps_data->als_correct_factor = STK_IRC_ALS_CORREC;
-		}
-#ifdef STK_DEBUG_PRINTF				
-		printk(KERN_INFO "%s: als=%d, ir=%d, als_correct_factor=%d", __func__, 
-						reading, ps_data->ir_code, ps_data->als_correct_factor);
-#endif		
-		ps_data->ir_code = 0;
-	}	
-	reading = reading * ps_data->als_correct_factor / 1000;
-	
-	reading_lux = stk_alscode2lux(ps_data, reading);
-	//if(abs(ps_data->als_lux_last - reading_lux) >= STK_ALS_CHANGE_THD)
-	//{
-		ps_data->als_lux_last = reading_lux;
-
-		#ifdef  REPORT_AS_MTK
-		reading_lux=stk3x1x_get_als_value(ps_data,reading_lux);
-		#else
-		if(reading_lux<=2)
-			reading_lux = 0;
-		else if(reading_lux<=10)
-			reading_lux = (reading_lux * 40) / 10;
-		else 
-			reading_lux = (reading_lux * 30) / 10;
-		#endif
-		input_report_abs(ps_data->als_input_dev, ABS_MISC, reading_lux);
-		input_sync(ps_data->als_input_dev);
-#ifdef STK_DEBUG_PRINTF				
-		printk(KERN_INFO "%s: als input event %d lux\n",__func__, reading_lux);		
-#endif		
-	//}
-	return;
+	ps_data->als_lux_last = stk_alscode2lux(ps_data, reading);
+	ts = ktime_get_boottime();
+	input_report_abs(ps_data->als_input_dev, ABS_MISC, ps_data->als_lux_last);
+	input_event(ps_data->als_input_dev, EV_SYN, SYN_TIME_SEC,
+			ktime_to_timespec(ts).tv_sec);
+	input_event(ps_data->als_input_dev, EV_SYN, SYN_TIME_NSEC,
+			ktime_to_timespec(ts).tv_nsec);
 }
 #endif /* #ifdef STK_POLL_ALS */
 
@@ -3267,11 +3198,9 @@ static void stk_ps_poll_work_func(struct work_struct *work)
 	struct stk3x1x_data *ps_data = container_of(work, struct stk3x1x_data, stk_ps_work);	
 	uint32_t reading;
 	int32_t near_far_state;
-    uint8_t org_flag_reg;	
-#ifdef STK_GES			
+	uint8_t org_flag_reg;
 	int32_t ret;
-    //uint8_t disable_flag = 0;
-	uint8_t disable_flag2 = 0, org_flag2_reg;
+	uint8_t disable_flag = 0;
 	if(ps_data->ges_enabled == 2)
 	{
 		ret = stk3x1x_get_flag2(ps_data);

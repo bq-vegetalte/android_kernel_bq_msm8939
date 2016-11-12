@@ -50,6 +50,13 @@
 
 /* sensor specific */
 #define SENSOR_NAME "bmi160"
+#define BMI160_ACCEL_INPUT_NAME         "bmi160-accel"
+#define BMI160_GYRO_INPUT_NAME          "bmi160-gyro"
+#define ABSMIN                      -512
+#define ABSMAX                      512
+#define GYRO_MIN_VALUE		-32768
+#define GYRO_MAX_VALUE		32767
+#define BMI_CAL_BUF_SIZE        99
 
 #define SENSOR_CHIP_ID_BMI (0xD0)
 #define SENSOR_CHIP_ID_BMI_C2 (0xD1)
@@ -220,6 +227,12 @@ enum BMI_FIFO_DATA_SELECT_T {
 * Bst sensor common definition,
 * please give parameters in BSP file.
 */
+struct bmi160_platform_data {
+        int gpio_pin;
+        unsigned int int_flag;
+        s8 place;
+};
+
 struct bosch_sensor_specific {
 	char *name;
 	/* 0 to 7 */
@@ -299,7 +312,10 @@ struct bmi_client_data {
 
 	atomic_t wkqueue_en; /*TO DO acc gyro mag*/
 	atomic_t delay;
+	atomic_t acc_delay;
+	atomic_t gyro_delay;
 	atomic_t selftest_result;
+	char calibrate_buf[BMI_CAL_BUF_SIZE];
 
 	u8  fifo_data_sel;
 	u16 fifo_bytecount;
@@ -310,11 +326,12 @@ struct bmi_client_data {
 	unsigned char *fifo_data;
 	u64 fifo_time;
 	u8 stc_enable;
-	uint16_t gpio_pin;
 	u8 std;
 	struct mutex mutex_op_mode;
 	struct mutex mutex_enable;
-	struct bosch_sensor_specific *bst_pd;
+	struct mutex mutex_ring_buf;
+	struct bmi160_platform_data *pdata;
+	bool power_enabled;
 	int IRQ;
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	struct early_suspend early_suspend_handler;
